@@ -20,27 +20,26 @@ public:
 
 class SocialNetwork
 {
-    public:
-    unordered_map<int,User>users;
-    unordered_map<int,vector<int>>graph;
-    unordered_map<int,vector<int>>friendRequest;
-    unordered_map<int,unordered_set<int>>blockUser;
-    unordered_map<int,int>mutualCount;
-    unordered_map<int, int> parent; 
-
+public:
+    unordered_map<int, User> users;
+    unordered_map<int, vector<int>> graph;
+    unordered_map<int, vector<int>> friendRequest;
+    unordered_map<int, unordered_set<int>> blockedUsers; // renamed
+    unordered_map<int, int> mutualCount;
+    unordered_map<int, int> parent;
 
     void addUser(User& user)
     {
         users[user.id] = user;
     }
 
-    void addFriend(int userOne,int userTwo)
+    void addFriend(int userOne, int userTwo)
     {
-        if(find(graph[userOne].begin(),graph[userOne].end(),userTwo) == graph[userOne].end())
+        if (find(graph[userOne].begin(), graph[userOne].end(), userTwo) == graph[userOne].end())
         {
             graph[userOne].push_back(userTwo);
         }
-        if(find(graph[userTwo].begin(),graph[userTwo].end(),userOne) == graph[userTwo].end())
+        if (find(graph[userTwo].begin(), graph[userTwo].end(), userOne) == graph[userTwo].end())
         {
             graph[userTwo].push_back(userOne);
         }
@@ -48,178 +47,166 @@ class SocialNetwork
 
     void displayFriends(int userId)
     {
-        if(graph.find(userId) == graph.end() || graph[userId].empty())
+        if (graph.find(userId) == graph.end() || graph[userId].empty())
         {
-            cout<<users[userId].name<<" have no friends\n";
-        }
-
-        cout<<"Friends of : "<<users[userId].name<<" : ";
-
-        for(int friendId : graph[userId])
-        {
-            cout<<users[friendId].name<<" ";
-        }
-        cout<<"\n";
-    }
-
-    void sendFriendRequest(int senderId,int receiverId)
-    {
-        if(find(graph[senderId].begin(),graph[senderId].end(),receiverId) != graph[senderId].end())
-        {
-            cout<<users[senderId].name<<" "<<" and "<<users[receiverId].name<<" already friends\n";
+            cout << users[userId].name << " has no friends\n";
             return;
         }
-        if(find(friendRequest[receiverId].begin(), friendRequest[receiverId].end(), senderId) != friendRequest[receiverId].end())
+        cout << "Friends of: " << users[userId].name << ": ";
+        for (int friendId : graph[userId])
+        {
+            cout << users[friendId].name << " ";
+        }
+        cout << "\n";
+    }
+
+    void sendFriendRequest(int senderId, int receiverId)
+    {
+        if (find(graph[senderId].begin(), graph[senderId].end(), receiverId) != graph[senderId].end())
+        {
+            cout << users[senderId].name << " and " << users[receiverId].name << " are already friends\n";
+            return;
+        }
+        if (find(friendRequest[receiverId].begin(), friendRequest[receiverId].end(), senderId) != friendRequest[receiverId].end())
         {
             cout << "Friend request already sent to " << users[receiverId].name << "!\n";
             return;
         }
-        else{
-            friendRequest[receiverId].push_back(senderId);//friendRequest[2] = 1
-            cout<<users[senderId].name<<"sent a friend request to"<<users[receiverId].name << "\n";
-        }
+        friendRequest[receiverId].push_back(senderId);
+        cout << users[senderId].name << " sent a friend request to " << users[receiverId].name << "\n";
     }
 
-    void acceptFriendRequest(int senderId,int receiverId)//Ajoy=1 request rahat=2
-    {
-        auto &request = friendRequest[receiverId];
-        auto it = find(request.begin(),request.end(),senderId);
-
-        if(it == friendRequest[receiverId].end())
-        {
-            cout<<users[receiverId].name<<" doesn't send friend request "<<users[senderId].name<<"\n";
-            return;
-        }
-
-        graph[receiverId].push_back(senderId);
-        graph[senderId].push_back(receiverId);
-
-        friendRequest[receiverId].erase(it);
-        cout<<users[receiverId].name<<" accept friend request from "<<users[senderId].name<<"\n";
-    }
-
-    void rejectFriendRequest(int senderId,int receiverId)
+    void acceptFriendRequest(int senderId, int receiverId)
     {
         auto& request = friendRequest[receiverId];
-        auto it = find(request.begin(),request.end(),senderId);
+        auto it = find(request.begin(), request.end(), senderId);
 
-        if(it == friendRequest[receiverId].end())
+        if (it == request.end())
         {
-            cout<<users[senderId].name<<" doesn't send friend request\n";
+            cout << users[receiverId].name << " has no friend request from " << users[senderId].name << "\n";
             return;
         }
-        friendRequest[receiverId].erase(it);
-        cout<<users[receiverId].name<<" decline friend request of "<<users[senderId].name<<"\n";
+
+        addFriend(senderId, receiverId);
+        request.erase(it);
+        cout << users[receiverId].name << " accepted friend request from " << users[senderId].name << "\n";
+    }
+
+    void rejectFriendRequest(int senderId, int receiverId)
+    {
+        auto& request = friendRequest[receiverId];
+        auto it = find(request.begin(), request.end(), senderId);
+
+        if (it == request.end())
+        {
+            cout << users[senderId].name << " has not sent friend request to " << users[receiverId].name << "\n";
+            return;
+        }
+        request.erase(it);
+        cout << users[receiverId].name << " declined friend request from " << users[senderId].name << "\n";
     }
 
     void showPendingFriendRequest(int userId)
     {
-        if(friendRequest[userId].empty())
+        if (friendRequest[userId].empty())
         {
             cout << users[userId].name << " has no pending friend requests.\n";
             return;
         }
-        cout<<"all pending request from : ";
-        for(int pendingFriendRequestId : friendRequest[userId])
+        cout << "All pending friend requests for " << users[userId].name << ": ";
+        for (int pendingFriendRequestId : friendRequest[userId])
         {
-            cout<<users[pendingFriendRequestId].name<<" ";
+            cout << users[pendingFriendRequestId].name << " ";
         }
-        cout<<"\n";
+        cout << "\n";
     }
 
-    void blockUser(int blockerId,int blockId)//1    2
+    void blockUser(int blockerId, int blockId)
     {
-        if(find(blockUser[blockerId].begin(),blockUser[blockerId].end(),blockId) == blockUser[blockerId].end())
+        if (blockedUsers[blockerId].find(blockId) == blockedUsers[blockerId].end())
         {
-            blockUser[blockerId].insert(blockId);
-            cout<<users[blockerId].name<<" has blocked "<< users[blockId].name<<"\n";
-        }
-    }
-    void unblockUser(int blockerId,int blockId)//1   2
-    {
-        if(find(blockUser[blockerId].begin(),blockUser[blockerId].end(),blockId) != blockUser[blockerId].end())
-        {
-            blockUser[blockerId].erase(blockId);
-            cout << users[blockerId].name << " has unblocked " << users[blockId].name<<"\n";
+            blockedUsers[blockerId].insert(blockId);
+            cout << users[blockerId].name << " has blocked " << users[blockId].name << "\n";
         }
         else
         {
-            cout << users[blockerId].name << " has not blocked " << users[blockId].name <<"\n";
+            cout << users[blockerId].name << " already blocked " << users[blockId].name << "\n";
         }
     }
 
-    bool cmp(pair<int,int>&a,pair<int,int>&b)
+    void unblockUser(int blockerId, int blockId)
     {
-        if(a.second > b.second)
+        if (blockedUsers[blockerId].find(blockId) != blockedUsers[blockerId].end())
         {
-            return true;
+            blockedUsers[blockerId].erase(blockId);
+            cout << users[blockerId].name << " has unblocked " << users[blockId].name << "\n";
         }
-        return false;
+        else
+        {
+            cout << users[blockerId].name << " has not blocked " << users[blockId].name << "\n";
+        }
     }
 
-    vector<int> friendSuggestion(int userId,vector<int>&suggestedFriends)//debug korte hobe
+    bool cmp(pair<int,int>& a, pair<int,int>& b)
     {
-        queue<int>q;
-        unordered_set<int>visited;
+        return a.second > b.second;
+    }
+
+    vector<int> friendSuggestion(int userId, vector<int>& suggestedFriends)
+    {
+        mutualCount.clear();
+        unordered_set<int> visited;
         visited.insert(userId);
+
+        queue<int> q;
         q.push(userId);
 
-        while(!q.empty())
+        while (!q.empty())
         {
             int current = q.front();
             q.pop();
-            for(int friendId : graph[current])//1 -> 2,3
+
+            for (int friendId : graph[current])
             {
-                if(friendId == userId)//problem
+                if (visited.find(friendId) == visited.end())
                 {
-                    continue;
+                    visited.insert(friendId);
+                    q.push(friendId);
                 }
-                for(int mutual : graph[friendId])
+                // Count mutual friends of user's friends
+                if (friendId != userId)
                 {
-                    if(mutual != userId && visited.find(mutual) == visited.end())
+                    for (int mutual : graph[friendId])
                     {
-                        mutualCount[mutual]++;///
+                        if (mutual != userId && visited.find(mutual) == visited.end())
+                        {
+                            mutualCount[mutual]++;
+                        }
                     }
                 }
             }
         }
 
-        vector<pair<int,int>>SortedSuggestion(mutualCount.begin(),mutualCount.end());
-        sort(SortedSuggestion.begin(),SortedSuggestion.end(),cmp);
+        vector<pair<int,int>> sortedSuggestion(mutualCount.begin(), mutualCount.end());
+        sort(sortedSuggestion.begin(), sortedSuggestion.end(), [&](auto &a, auto &b) {
+            return a.second > b.second;
+        });
 
-        for(auto &p : SortedSuggestion)
+        for (auto &p : sortedSuggestion)
         {
             suggestedFriends.push_back(p.first);
         }
+
         return suggestedFriends;
     }
 
-    
-    void init()
+    vector<int> createTempArray(const string& pattern)
     {
-        
-    }
-
-    void unionFind(int userOne,int userTwo)
-    {
-        init();
-        /*
-
-        find(u);//kon set a ache
-        union(u,v);//duijon friend k same set e niye ashbe
-        makeSet(u);//indiviual manush k set e niye asbe
-        IsSameSet(u,v);//is friend or not
-
-        */
-    }
-
-    vector<int>createTempArray(string pattern)
-    {
-        vector<int>lps(pattern.size());
+        vector<int> lps(pattern.size());
         int index = 0;
-        for(int i = 1 ; i < pattern.size() ; )
+        for (int i = 1; i < (int)pattern.size(); )
         {
-            if(pattern[i] == pattern[index])
+            if (pattern[i] == pattern[index])
             {
                 lps[i] = index + 1;
                 index++;
@@ -227,13 +214,13 @@ class SocialNetwork
             }
             else
             {
-                if(index != 0)
+                if (index != 0)
                 {
                     index = lps[index - 1];
                 }
                 else
                 {
-                    lps[i] = index;
+                    lps[i] = 0;
                     i++;
                 }
             }
@@ -241,69 +228,58 @@ class SocialNetwork
         return lps;
     }
 
-    bool patternSearching(string& pattern,string& text)//O(n + m)  trie use korbo
+    bool patternSearching(const string& pattern, const string& text)
     {
-        bool flag = false;
-        vector<int>lps = createTempArray(pattern);//
-        int i = 0,j = 0;
-        while(i < text.size())
+        vector<int> lps = createTempArray(pattern);
+        int i = 0, j = 0;
+
+        while (i < (int)text.size())
         {
-            if(text[i] == pattern[j])
+            if (text[i] == pattern[j])
             {
                 i++;
                 j++;
+                if (j == (int)pattern.size())
+                    return true;
             }
             else
             {
-                if(j != 0)
-                {
-                    j = lps[j-1];
-                }
+                if (j != 0)
+                    j = lps[j - 1];
                 else
-                {
                     i++;
-                }
-            }
-            if(j == pattern.size())
-            {
-                flag = true;
-                return true;
             }
         }
-
-        if(flag == false)
-        {
-            return false;
-        }
+        return false;
     }
 
-    void searchFriendList(int userId,string& userName)//1
+    void searchFriendList(int userId, const string& userName)
     {
-        if(graph.find(userId) == graph.end() || graph[userId].empty())
+        if (graph.find(userId) == graph.end() || graph[userId].empty())
         {
-            cout<<users[userId].name<<" has no friends\n";
+            cout << users[userId].name << " has no friends\n";
             return;
         }
+
         bool found = false;
-        string username = userName;// di
-        transform(username.begin(),username.end(),username.begin(),::tolower);
+        string username = userName;
+        transform(username.begin(), username.end(), username.begin(), ::tolower);
 
-        for(int friendId : graph[userId])//2 : graph[1]
+        for (int friendId : graph[userId])
         {
-            string friendName = users[friendId].name;//
-            string lowerFriendName = friendName;//
-            transform(lowerFriendName.begin(),lowerFriendName.end(),lowerFriendName.begin(),::tolower);
+            string friendName = users[friendId].name;
+            string lowerFriendName = friendName;
+            transform(lowerFriendName.begin(), lowerFriendName.end(), lowerFriendName.begin(), ::tolower);
 
-            if(patternSearching(username,lowerFriendName))//KMP algorithm
+            if (patternSearching(username, lowerFriendName))
             {
                 found = true;
-                cout<<"Name : "<<friendName<<"\n";//all name show korbe
+                cout << "Name: " << friendName << "\n";
             }
         }
-        if(!found)
-        {
-            cout<<"No match found\n";
-        }
+
+        if (!found)
+            cout << "No match found\n";
     }
 };
 
@@ -311,80 +287,80 @@ int main()
 {
     fastIO();
 
-	SocialNetwork Sn;
-    int numberOfUsers,numberOfFriendships;
-    cin>>numberOfUsers;
+    SocialNetwork Sn;
+    int numberOfUsers, numberOfFriendships;
+    cout << "Number of Users: ";
+    cin >> numberOfUsers;
 
-    for(int i = 0 ; i < numberOfUsers ; i++)
+    for (int i = 0; i < numberOfUsers; i++)
     {
         User user;
-        cout<<"Id and Name : ";
-        cin>>user.id;
-        cin>>user.name;
+        cout << "Id and Name: ";
+        cin >> user.id >> user.name;
         Sn.addUser(user);
     }
 
-    cout<<"Number of FriendShips : ";
-    cin>>numberOfFriendships;
+    cout << "Number of Friendships: ";
+    cin >> numberOfFriendships;
 
-    for(int i = 0 ; i < numberOfFriendships; i++)
+    for (int i = 0; i < numberOfFriendships; i++)
     {
-        int userOne,userTwo;
-        cin>>userOne>>userTwo;
+        int userOne, userTwo;
+        cin >> userOne >> userTwo;
 
-        if(Sn.users.find(userOne) == Sn.users.end() || Sn.users.find(userTwo) == Sn.users.end())
+        if (Sn.users.find(userOne) == Sn.users.end() || Sn.users.find(userTwo) == Sn.users.end())
         {
-            cout<<"Skip Those friends!\n";
+            cout << "Skipping invalid friendship!\n";
             continue;
         }
-        Sn.addFriend(userOne,userTwo);
+        Sn.addFriend(userOne, userTwo);
     }
 
-    cout<<"Display friendlist : \n";
-
-    unordered_map<int,bool>visited;
-    for(auto i : Sn.users)
+    cout << "\nDisplaying friend list:\n";
+    for (auto& u : Sn.users)
     {
-        int id = i.first;
-        Sn.displayFriends(id);
+        Sn.displayFriends(u.first);
     }
 
-    //search friend
+    // Search Friend
     int searchUserId;
-    cout<<"Search User Id : ";
-    cin>>searchUserId;
+    cout << "\nSearch User Id: ";
+    cin >> searchUserId;
     cin.ignore();
     string searchUserName;
-    cout<<"Search User Name : ";
-    getline(cin,searchUserName);
-    Sn.searchFriendList(searchUserId,searchUserName);
+    cout << "Search User Name: ";
+    getline(cin, searchUserName);
+    Sn.searchFriendList(searchUserId, searchUserName);
 
-    //friend request
-    int senderId,receiverId;
-    cin>>senderId>>receiverId;
-    Sn.sendFriendRequest(senderId,receiverId);
+    // Friend Request
+    int senderId, receiverId;
+    cout << "\nSend Friend Request: Enter senderId receiverId: ";
+    cin >> senderId >> receiverId;
+    Sn.sendFriendRequest(senderId, receiverId);
 
-    Sn.acceptFriendRequest(senderId,receiverId);
+    cout << "\nAccept Friend Request: Enter senderId receiverId: ";
+    cin >> senderId >> receiverId;
+    Sn.acceptFriendRequest(senderId, receiverId);
 
+    // Block & Unblock
+    int blockerId, blockId;
+    cout << "\nBlock User: Enter blockerId blockId: ";
+    cin >> blockerId >> blockId;
+    Sn.blockUser(blockerId, blockId);
 
-    int blockerId,blockId;
-    cin>>blockerId>>blockId;
-    Sn.blockUser(blockerId,blockId);
-    Sn.unblockUser(blockerId,blockId);
+    cout << "\nUnblock User: Enter blockerId blockId: ";
+    cin >> blockerId >> blockId;
+    Sn.unblockUser(blockerId, blockId);
 
-
+    // Friend Suggestions
     vector<int> suggestedFriends;
-    Sn.friendSuggestion(1,suggestedFriends);
-    for(auto i : suggestedFriends)
+    cout << "\nFriend suggestions for user 1:\n";
+    Sn.friendSuggestion(1, suggestedFriends);
+    for (auto i : suggestedFriends)
     {
-        cout<<i<<" ";
+        cout << i << " ";
     }
+    cout << "\n";
 
-    //same group e ache kina nay eita determine korar jonno unionFind function use okra hoi..
-    int friendOne,friendTwo;
-    cin>>friendOne>>friendTwo;
-    Sn.unionFind(friendOne,friendTwo);
-
-
-    //post,comment
+    return 0;
 }
